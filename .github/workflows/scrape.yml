@@ -5,35 +5,42 @@ on:
     - cron: '0 3 * * *'  # 3 AM UTC = 10 PM hora Perú
   workflow_dispatch:
 
-permissions:
-  contents: write  # Permitir que el bot de GitHub Actions haga push
-
 jobs:
   scrape:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Clonar repositorio
-      uses: actions/checkout@v3
-      
-    - name: Instalar Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
+      - name: Clonar repositorio
+        uses: actions/checkout@v3
 
-    - name: Instalar dependencias
-      run: pip install requests beautifulsoup4
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
 
-    - name: Ejecutar scraper.py
-      run: python scraper.py
+      - name: Instalar dependencias
+        run: pip install requests beautifulsoup4 dropbox
 
-    - name: Push cambios
-      env:
-        TOKEN: ${{ secrets.ACTIONS_TOKEN }}
-      run: |
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
-        git remote set-url origin https://x-access-token:${TOKEN}@github.com/Brayan456/Scrapping-G5.git
-        git add .
-        git commit -m "Scraping automático: $(date +'%Y-%m-%d')" || echo "No hay cambios"
-        git push origin HEAD:${{ github.ref_name }}
+      - name: Ejecutar scraper.py
+        run: python scraper.py
+
+      - name: Subir archivos a Dropbox
+        env:
+          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+        run: |
+          python <<EOF
+          import os
+          import dropbox
+
+          folder = "data"
+          dbx = dropbox.Dropbox(os.environ["DROPBOX_TOKEN"])
+
+          for root, dirs, files in os.walk(folder):
+              for name in files:
+                  local_path = os.path.join(root, name)
+                  dropbox_path = "/" + local_path.replace("\\", "/")
+                  with open(local_path, "rb") as f:
+                      dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+                  print(f"Subido: {dropbox_path}")
+          EOF
+
