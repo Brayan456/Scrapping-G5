@@ -5,6 +5,9 @@ on:
     - cron: '0 3 * * *'  # 3 AM UTC = 10 PM hora Perú
   workflow_dispatch:
 
+permissions:
+  contents: write  # Permitir que el bot de GitHub Actions haga push
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
@@ -12,7 +15,7 @@ jobs:
     steps:
     - name: Clonar repositorio
       uses: actions/checkout@v3
-
+      
     - name: Instalar Python
       uses: actions/setup-python@v4
       with:
@@ -34,5 +37,3 @@ jobs:
         git add .
         git commit -m "Scraping automático: $(date +'%Y-%m-%d')" || echo "No hay cambios"
         git push origin HEAD:${{ github.ref_name }}
-
-
