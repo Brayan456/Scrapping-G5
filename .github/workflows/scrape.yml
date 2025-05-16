@@ -1,1 +1,34 @@
+name: Scraping Diario Grupo 5
+
+on:
+  schedule:
+    - cron: '0 3 * * *'  # 3 AM UTC = 10 PM hora Perú
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Clonar repositorio
+      uses: actions/checkout@v3
+
+    - name: Instalar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Instalar dependencias
+      run: pip install requests beautifulsoup4
+
+    - name: Ejecutar scraper.py
+      run: python scraper.py
+
+    - name: Subir cambios
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add data/
+        git commit -m "Scraping automático: $(date +'%Y-%m-%d')" || echo "No hay cambios"
+        git push
 
