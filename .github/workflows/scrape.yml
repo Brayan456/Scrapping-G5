@@ -23,7 +23,7 @@ jobs:
 
     - name: Ejecutar scraper.py
       run: python scraper.py
-      
+
     - name: Push cambios
       env:
         TOKEN: ${{ secrets.ACTIONS_TOKEN }}
@@ -32,7 +32,7 @@ jobs:
         git config user.email "github-actions[bot]@users.noreply.github.com"
         git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
         git add .
-        git commit -m "Scraping automático: ${{ steps.date.outputs.today }}"
+        git commit -m "Scraping automático: $(date +'%Y-%m-%d')" || echo "No hay cambios"
         git push origin HEAD:${{ github.ref_name }}
 
 
