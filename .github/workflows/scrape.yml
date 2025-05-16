@@ -31,14 +31,19 @@ jobs:
           python <<EOF
           import os
           import dropbox
+          from datetime import datetime
 
           folder = "data"
+          today = datetime.today().strftime("%Y-%m-%d")
+          base_dropbox_path = f"/Scraping-G5/{today}"
+
           dbx = dropbox.Dropbox(os.environ["DROPBOX_TOKEN"])
 
           for root, dirs, files in os.walk(folder):
               for name in files:
                   local_path = os.path.join(root, name)
-                  dropbox_path = "/" + local_path.replace("\\", "/")
+                  relative_path = os.path.relpath(local_path, folder)
+                  dropbox_path = f"{base_dropbox_path}/{relative_path.replace(os.sep, '/')}"
                   with open(local_path, "rb") as f:
                       dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
                   print(f"Subido: {dropbox_path}")
