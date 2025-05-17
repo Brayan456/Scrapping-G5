@@ -39,42 +39,32 @@ except Exception as e:
 # 2. Scraping de inflación Perú desde TradingEconomics
 # -------------------------------------
 
-# Encabezados HTTP para simular un navegador y evitar bloqueo
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36"
-}
 
-# URL de la página de inflación de Perú en TradingEconomics
-te_url = "https://es.tradingeconomics.com/peru/inflation-cpi"
+# URL de la página de ejemplo: Inflación en Perú
+te_url = "https://tradingeconomics.com/peru/inflation-cpi"
+categoria = "inflacion_peru"
 
 try:
-    # Solicitud HTTP a la página de TradingEconomics
+    # Realizar solicitud GET con headers
+    headers = {
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
+    }
     r = requests.get(te_url, headers=headers)
-    r.raise_for_status()  # Lanza excepción si hubo error
+    r.raise_for_status()
 
-    # Parsear el contenido HTML con BeautifulSoup
-    soup = BeautifulSoup(r.content, "html.parser")
+    # Leer todas las tablas HTML de la página
+    tables = pd.read_html(r.text)
 
-    # Buscar elementos que contengan el nombre del indicador y su valor actual
-    indicador = soup.find("span", class_="pull-left")
-    valor = soup.find("span", class_="pull-right")
-
-    # Si ambos elementos fueron encontrados, combinarlos
-    if indicador and valor:
-        inflacion = indicador.get_text(strip=True) + ": " + valor.get_text(strip=True)
-    else:
-        inflacion = "No se pudo extraer valor correctamente."
-
-    # Crear carpeta donde se almacenará el dato de inflación
-    te_path = os.path.join("data", "tradingeconomics", hoy)
+    # Crear carpeta específica para esta categoría
+    te_path = os.path.join("data", categoria, hoy)
     os.makedirs(te_path, exist_ok=True)
 
-    # Guardar el dato de inflación en un archivo de texto
-    with open(os.path.join(te_path, "inflacion.txt"), "w", encoding="utf-8") as f:
-        f.write(inflacion)
+    # Guardar todas las tablas como CSV
+    for i, tabla in enumerate(tables):
+        archivo_csv = os.path.join(te_path, f"tabla_{i+1}.csv")
+        tabla.to_csv(archivo_csv, index=False)
+        print(f"[✓] Tabla {i+1} guardada en: {archivo_csv}")
 
-    # Confirmación en consola
-    print(f"[✓] Inflación Perú guardada en {te_path}\\inflacion.txt")
 except Exception as e:
-    # Manejo de errores en caso de fallo en la descarga o parseo
-    print(f"[✗] Error al acceder a tradingeconomics: {e}")
+    print(f"[✗] Error al acceder a TradingEconomics: {e}")
+
