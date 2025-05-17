@@ -19,7 +19,7 @@ jobs:
           python-version: '3.10'
 
       - name: Instalar dependencias
-        run: pip install requests beautifulsoup4
+        run: pip install requests beautifulsoup4 dropbox
 
       - name: Ejecutar scraper.py
         run: python scraper.py
