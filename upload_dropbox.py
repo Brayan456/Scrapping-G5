@@ -1,11 +1,32 @@
 import os
 import requests
 
-DROPBOX_TOKEN = os.getenv("DROPBOX_TOKEN")
-DROPBOX_API = "https://content.dropboxapi.com/2/files/upload"
+# Variables de entorno (guárdalas como secretos en GitHub o .env local)
+DROPBOX_REFRESH_TOKEN = os.getenv("DROPBOX_REFRESH_TOKEN")
+DROPBOX_APP_KEY = os.getenv("DROPBOX_APP_KEY")
+DROPBOX_APP_SECRET = os.getenv("DROPBOX_APP_SECRET")
 
+# Paso 1: obtener nuevo access_token
+print("[*] Solicitando nuevo access_token...")
+auth_response = requests.post(
+    "https://api.dropboxapi.com/oauth2/token",
+    data={
+        "grant_type": "refresh_token",
+        "refresh_token": DROPBOX_REFRESH_TOKEN,
+    },
+    auth=(DROPBOX_APP_KEY, DROPBOX_APP_SECRET),
+)
+
+if auth_response.status_code != 200:
+    print("[✗] Error al obtener access_token:", auth_response.text)
+    exit(1)
+
+access_token = auth_response.json()["access_token"]
+print("[✓] access_token obtenido")
+
+# Paso 2: preparar cabecera para subir archivos
 headers = {
-    "Authorization": f"Bearer {DROPBOX_TOKEN}",
+    "Authorization": f"Bearer {access_token}",
     "Content-Type": "application/octet-stream",
 }
 
@@ -22,8 +43,13 @@ for local_path, dropbox_path in files_to_upload:
     with open(local_path, "rb") as f:
         print(f"[+] Subiendo {local_path} a Dropbox en {dropbox_path}")
         response = requests.post(
-            DROPBOX_API,
-            headers={**headers, "Dropbox-API-Arg": str({"path": dropbox_path, "mode": "overwrite", "autorename": False, "mute": False}).replace("'", '"')},
+            "https://content.dropboxapi.com/2/files/upload",
+            headers={**headers, "Dropbox-API-Arg": str({
+                "path": dropbox_path,
+                "mode": "overwrite",
+                "autorename": False,
+                "mute": False
+            }).replace("'", '"')},
             data=f
         )
         if response.status_code == 200:
