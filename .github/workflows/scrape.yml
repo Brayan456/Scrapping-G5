@@ -2,7 +2,7 @@ name: Scraping Diario Grupo 5
 
 on:
   schedule:
-    - cron: '0 3 * * *'  # 3 AM UTC = 10 PM hora Perú
+    - cron: '0 3 * * *'  # 3 AM UTC = 10 PM Perú
   workflow_dispatch:
 
 jobs:
@@ -19,12 +19,12 @@ jobs:
           python-version: '3.10'
 
       - name: Instalar dependencias
-        run: pip install requests beautifulsoup4 dropbox
+        run: pip install requests beautifulsoup4 dropbox pandas
 
       - name: Ejecutar scraper.py
         run: python scraper.py
 
-      - name: Subir archivos a Dropbox (con refresh token)
+      - name: Subir archivos a Dropbox (con refresh token automático)
         env:
           DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
           DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
@@ -36,7 +36,6 @@ jobs:
           import dropbox
           from datetime import datetime
 
-          # Obtener nuevo access_token usando refresh_token
           print("[*] Renovando access_token de Dropbox...")
           res = requests.post(
               "https://api.dropboxapi.com/oauth2/token",
@@ -50,7 +49,6 @@ jobs:
           access_token = res.json()["access_token"]
           print("[✓] Nuevo access_token obtenido.")
 
-          # Conectar a Dropbox y subir archivos
           dbx = dropbox.Dropbox(access_token)
 
           folder = "data"
