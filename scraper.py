@@ -56,7 +56,7 @@ try:
     soup = BeautifulSoup(r.content, "html.parser")
 
     # Buscar elementos que contengan el nombre del indicador y su valor actual
-    indicador = soup.find("span", class_="pull-left")  # Esto puede requerir ajuste si cambia el HTML
+    indicador = soup.find("span", class_="pull-left")
     valor = soup.find("span", class_="pull-right")
 
     # Si ambos elementos fueron encontrados, combinarlos
