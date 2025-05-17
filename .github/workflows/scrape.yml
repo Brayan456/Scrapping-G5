@@ -19,10 +19,11 @@ jobs:
           python-version: '3.10'
 
       - name: Instalar dependencias
-        run: pip install requests beautifulsoup4 dropbox pandas
+        run: pip install requests beautifulsoup4 dropbox pandas lxml html5lib
 
       - name: Ejecutar scraper.py
-        run: python scraper.py
+        run: |
+          python scraper.py
 
       - name: Subir archivos a Dropbox (con refresh token automático)
         env:
@@ -60,8 +61,11 @@ jobs:
                   local_path = os.path.join(root, name)
                   relative_path = os.path.relpath(local_path, folder)
                   dropbox_path = f"{base_dropbox_path}/{relative_path.replace(os.sep, '/')}"
-
                   with open(local_path, "rb") as f:
-                      dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
-                      print(f"[✓] Subido: {dropbox_path}")
+                      try:
+                          dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+                          print(f"[✓] Subido: {dropbox_path}")
+                      except Exception as e:
+                          print(f"[✗] Error subiendo {dropbox_path}: {e}")
           EOF
+
