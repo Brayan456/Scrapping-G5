@@ -19,33 +19,51 @@ jobs:
           python-version: '3.10'
 
       - name: Instalar dependencias
-        run: pip install requests beautifulsoup4 dropbox
+        run: pip install requests beautifulsoup4
 
       - name: Ejecutar scraper.py
         run: python scraper.py
 
-      - name: Subir archivos a Dropbox
+      - name: Subir archivos a Dropbox (con refresh token)
         env:
-          DROPBOX_TOKEN: ${{ secrets.DROPBOX_TOKEN }}
+          DROPBOX_REFRESH_TOKEN: ${{ secrets.DROPBOX_REFRESH_TOKEN }}
+          DROPBOX_APP_KEY: ${{ secrets.DROPBOX_APP_KEY }}
+          DROPBOX_APP_SECRET: ${{ secrets.DROPBOX_APP_SECRET }}
         run: |
           python <<EOF
           import os
+          import requests
           import dropbox
           from datetime import datetime
+
+          # Obtener nuevo access_token usando refresh_token
+          print("[*] Renovando access_token de Dropbox...")
+          res = requests.post(
+              "https://api.dropboxapi.com/oauth2/token",
+              data={
+                  "grant_type": "refresh_token",
+                  "refresh_token": os.environ["DROPBOX_REFRESH_TOKEN"]
+              },
+              auth=(os.environ["DROPBOX_APP_KEY"], os.environ["DROPBOX_APP_SECRET"])
+          )
+          res.raise_for_status()
+          access_token = res.json()["access_token"]
+          print("[✓] Nuevo access_token obtenido.")
+
+          # Conectar a Dropbox y subir archivos
+          dbx = dropbox.Dropbox(access_token)
 
           folder = "data"
           today = datetime.today().strftime("%Y-%m-%d")
           base_dropbox_path = f"/Scraping-G5/{today}"
-
-          dbx = dropbox.Dropbox(os.environ["DROPBOX_TOKEN"])
 
           for root, dirs, files in os.walk(folder):
               for name in files:
                   local_path = os.path.join(root, name)
                   relative_path = os.path.relpath(local_path, folder)
                   dropbox_path = f"{base_dropbox_path}/{relative_path.replace(os.sep, '/')}"
+
                   with open(local_path, "rb") as f:
                       dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
-                  print(f"Subido: {dropbox_path}")
+                      print(f"[✓] Subido: {dropbox_path}")
           EOF
-
